@@ -1,8 +1,9 @@
 from flask import Flask, render_template, request, jsonify, flash, redirect, url_for
-from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required
+from flask_login import LoginManager, UserMixin, login_user, logout_user, login_required, current_user
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import random
+from datetime import datetime, timezone
 
 app = Flask(__name__)
 
@@ -18,14 +19,25 @@ login_manager = LoginManager(app)
 login_manager.login_view = 'login'
 
 # DB設定
+## ユーザー情報
 class User(UserMixin, db.Model):
     __tablename__ = 'user'
     __table_args__ = {'sqlite_autoincrement':True}
 
     id = db.Column(db.Integer, primary_key=True)
     user_name = db.Column(db.String(50), unique=True)
-    user_password = db.Column(db.String(64))
-    user_result = db.Column(db.String(100))
+    user_password = db.Column(db.String(256))
+
+## 対戦履歴
+class BattleLog(db.Model):
+    __tablename__ = 'game_log'
+
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('user.id'), nullable=False)
+    player_hand_name = db.Column(db.String(20), nullable=False)
+    com_hand_name = db.Column(db.String(20), nullable=False)
+    user_result = db.Column(db.String(20), nullable=False)
+    timestamp = db.Column(db.DateTime, default=datetime.now(timezone.utc))
 
 @login_manager.user_loader
 def load_user(id):
@@ -50,11 +62,12 @@ power_balance = {
 
 # ---
 
+# インデックス
 @app.route("/")
 def index():
-    return render_template('index.html')
+    return render_template('index.html', user_name=current_user)
 
-# 登録
+# ユーザー登録
 @app.route("/signup", methods=["get", "post"])
 def signup():
     if request.method == 'GET':
@@ -82,7 +95,7 @@ def signup():
     db.session.commit()
 
     flash("正常に登録されました。", 'success')
-    return redirect(url_for('battle'))
+    return redirect(url_for('index'))
 
 # ログイン
 @app.route('/login', methods=["get", "post"])
@@ -102,13 +115,21 @@ def login():
             return redirect(url_for('battle'))
         
         # elseの場合
-        flash("emailまたはpassswordが不正です。")
+        flash("名前またはパスワードが不正です。")
         # ↓に流れる
 
     return render_template('login.html')
 
+# ログアウト
+@app.route('/logout')
+@login_required
+def logout():
+    logout_user()
+    return redirect(url_for('index'))
+
 # 勝負画面
 @app.route("/battle")
+@login_required
 def battle():
     return render_template('battle.html', hands=hand)
 
@@ -136,14 +157,26 @@ def api_play():
     # あいこ
     if player_hand_index == com_hand_index:
         result_text = "あいこ"
+        user_result = "draw"
 
     # 勝ち
     elif com_hand_index in power_balance[player_hand_index]:
         result_text = "かち"
+        user_result = "win"
 
     # 負け
     else:
         result_text = "まけ"
+        user_result = "lose"
+
+    log = BattleLog(
+    user_id=current_user.id,
+    player_hand_name=hand[player_hand_index],
+    com_hand_name=hand[com_hand_index],
+    result=user_result
+    )
+    db.session.add(log)
+    db.session.commit()
 
     # JSONレスポンス
     response_data = {
@@ -154,8 +187,22 @@ def api_play():
         "result_text": result_text
     }
 
+    # DB登録
+    user = User(user_result=user_result)
+    db.session.add(user)
+    db.session.commit()
+
     # JSONデータを返す
     return jsonify(response_data)
+
+# 対戦履歴
+@app.route('/battle_log')
+@login_required
+def battle_log():
+    # 現在のユーザーIDから対戦履歴を取得、日付でソート
+    game_logs = BattleLog.query.filter_by(user_id=current_user.id).order_by(BattleLog.timestamp.desc()).all
+
+    return render_template('battle_log.html', game_logs=game_logs, user_name=current_user.user_name)
 
 # ---
 

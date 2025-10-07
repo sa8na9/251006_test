@@ -10,10 +10,30 @@
     <h2>登録</h2>
 
     <form method="post">
-        <input type="text" name="name" required>
-        <input type="password" name="password" required>
+
+        <label for="name">
+            名前<input type="text" id="name" name="name" required>
+        </label><br>
+
+        <label for="password">
+            パスワード
+        <input type="password" id="password" name="password" required>
+        </label><br>
+
         <input type="submit" value="登録">
+
     </form>
+
+    {# エラーメッセージ #}
+    {% with messages = get_flashed_messages() %}
+        {% if messages %}
+        <ul>
+            {% for message in messages %}
+            <li>{{ message }}</li>
+            {% endfor %}
+        </ul>
+        {% endif %}
+    {% endwith%}
 
 
 </body>
