@@ -1,0 +1,20 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>結果</title>
+</head>
+<body>
+    <h1>結果</h1>
+    {% if error %}
+    <p style="color: red;">エラーが発生しました</p>
+    {% else %}
+    <p>あなたの手： {{ player_hand }}</p>
+    <p>コンピュータの手： {{ com_hand }}</p>
+    <p>勝敗： {{ result }}</p>
+    {% endif %}
+
+    <a href="/"><p>最初に戻る</p></a>
+</body>
+</html>

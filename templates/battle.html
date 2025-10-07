@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>バトル</title>
+</head>
+<body>
+    <h1>RPS-7</h1>
+    <h2>手を選ぶ</h2>
+
+    <div id="hand_btns">
+
+        <!-- ボタンを出力 -->
+        {% for hand in hands %}                             {# jinja2はインデックス1から始まるので調整 #}
+            <button class="hand_btn" type="submit" name="player_hand" value="{{ loop.index0 }}">{{ hand }}</button>
+        {% endfor %}
+            <!-- エラーテスト用ボタン -->
+        <button type="submit" name="player_hand" value="7">error</button>
+    </div>
+
+    <div id="result_display">
+        <!-- 結果表示用 -->
+    </div>
+
+    <script>
+        // HTMLが読まれて操作可能になったときのイベント 
+        document.addEventListener('DOMContentLoaded', () => {
+
+            // 結果を表示する場所を取得
+            const resultDisplay = document.getElementById('result_display');
+
+            // ボタンをすべて取得
+            const handBtns = document.querySelectorAll('.hand_btn');
+
+            // 各ボタンにクリックイベントを付与 
+            handBtns.forEach(btn => {
+                                                    // 処理の内容を取得 
+                btn.addEventListener('click', async (event) => {
+
+                    console.log('ボタンクリック')
+                    // プレイヤーが選択した手のインデックスを取得 
+                    const playerHandIndex = event.target.value;
+                    console.log(playerHandIndex);
+
+                    // 送信用データを作成 
+                    const formData = new FormData();
+                    formData.append('player_hand', playerHandIndex);
+
+                    // HTTPリクエスト　データ取得 
+                    const response = await fetch('api/play', {
+                        method: "post",     // 通信方法 
+                        body: formData,     // 送る内容 
+                    });
+
+                    // json形式に変換
+                    const dataJ = await response.json()
+
+                    // 結果出力
+                    resultDisplay.innerHTML = `
+                        <h2>結果</h2>
+                        <p>あなたの手： ${dataJ.player_hand_name}</p>
+                        <p>コンピュータの手： ${dataJ.com_hand_name}</p>
+                        <p>勝者： ${dataJ.result_text}</p>
+                    `;
+                });
+            });
+        });
+    </script>
+
+</body>
+</html>
