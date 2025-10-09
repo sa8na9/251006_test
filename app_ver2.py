@@ -3,7 +3,7 @@ from flask_login import LoginManager, UserMixin, login_user, logout_user, login_
 from flask_sqlalchemy import SQLAlchemy
 from werkzeug.security import generate_password_hash, check_password_hash
 import random
-from datetime import datetime, timezone
+from datetime import datetime, timezone, timedelta
 
 app = Flask(__name__)
 
@@ -169,11 +169,14 @@ def api_play():
         result_text = "まけ"
         user_result = "lose"
 
+    JST = timezone(timedelta(hours=9))
+
     log = BattleLog(
     user_id=current_user.id,
     player_hand_name=hand[player_hand_index],
     com_hand_name=hand[com_hand_index],
-    result=user_result
+    user_result=user_result, 
+    timestamp=datetime.now(JST)
     )
     db.session.add(log)
     db.session.commit()
@@ -188,9 +191,9 @@ def api_play():
     }
 
     # DB登録
-    user = User(user_result=user_result)
-    db.session.add(user)
-    db.session.commit()
+    # user = User(user_result=user_result)
+    # db.session.add(user)
+    # db.session.commit()
 
     # JSONデータを返す
     return jsonify(response_data)
@@ -200,7 +203,7 @@ def api_play():
 @login_required
 def battle_log():
     # 現在のユーザーIDから対戦履歴を取得、日付でソート
-    game_logs = BattleLog.query.filter_by(user_id=current_user.id).order_by(BattleLog.timestamp.desc()).all
+    game_logs = BattleLog.query.filter_by(user_id=current_user.id).order_by(BattleLog.timestamp.desc()).all()
 
     return render_template('battle_log.html', game_logs=game_logs, user_name=current_user.user_name)
 

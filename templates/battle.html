@@ -18,15 +18,17 @@
 
         <!-- ボタンを出力 -->
         {% for hand in hands %}                             {# jinja2はインデックス1から始まるので調整 #}
-            <button class="hand_btn" type="submit" name="player_hand" value="{{ loop.index0 }}">{{ hand }}</button>
+            <button type="submit" class="hand_btn" name="player_hand" value="{{ loop.index0 }}">{{ hand }}</button>
         {% endfor %}
             <!-- エラーテスト用ボタン -->
-        <button type="submit" name="player_hand" value="7">error</button>
+        <button type="submit" class="hand_btn" name="player_hand" value="7">error</button>
     </div>
 
     <div id="result_display">
         <!-- 結果表示用 -->
     </div>
+
+    <a href="{{ url_for('index') }}">トップページ</a>
 
     <script>
         // HTMLが読まれて操作可能になったときのイベント 
@@ -48,7 +50,7 @@
 
                     console.log('ボタンクリック')
                     // プレイヤーが選択した手のインデックスを取得 
-                    const playerHandIndex = event.target.value;
+                    const playerHandIndex = event.currentTarget.value;
                     console.log(playerHandIndex);
 
                     // 送信用データを作成 
@@ -56,9 +58,9 @@
                     formData.append('player_hand', playerHandIndex);
 
                     // HTTPリクエスト　データ取得 
-                    const response = await fetch(/api/play, {
-                        method: "post",     // 通信方法 
-                        body: formData,     // 送る内容 
+                    const response = await fetch('/api/play', {
+                        method: "POST",     // 通信方法 
+                        body: new URLSearchParams(formData)     // 送る内容 
                     });
 
                     // json形式に変換

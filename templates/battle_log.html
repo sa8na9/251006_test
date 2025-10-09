@@ -7,12 +7,34 @@
 </head>
 <body>
     <h1>対戦履歴</h1>
+
     {% if current_user.is_authenticated %}
-        <p>
-            ようこそ、{{ current_user.user_name }}
-        </p>
+        <p>ようこそ、{{ current_user.user_name }}</p>
     {% endif %}
-    <h2>{{ user_name }}</h2>
-    <p>{{ game_logs }}</p>
+
+    <h2>{{ user_name }}さんの対戦記録</h2>
+
+    {% if game_logs %}
+        <table border="1" cellpadding="5">
+            <tr>
+                <th>日時</th>
+                <th>あなたの手</th>
+                <th>コンピュータの手</th>
+                <th>結果</th>
+            </tr>
+            {% for log in game_logs %}
+            <tr>
+                <td>{{ log.timestamp.strftime('%Y-%m-%d %H:%M:%S') }}</td>
+                <td>{{ log.player_hand_name }}</td>
+                <td>{{ log.com_hand_name }}</td>
+                <td>{{ log.user_result }}</td>
+            </tr>
+            {% endfor %}
+        </table>
+    {% else %}
+        <p>まだ対戦履歴がありません。</p>
+    {% endif %}
+
+    <a href="{{ url_for('index') }}">トップページへ戻る</a>
 </body>
 </html>
